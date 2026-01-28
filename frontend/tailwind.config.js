@@ -1,0 +1,105 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+    content: [
+        "./index.html",
+        "./src/**/*.{js,ts,jsx,tsx}",
+    ],
+    theme: {
+        extend: {
+            colors: {
+                border: "hsl(var(--border))",
+                input: "hsl(var(--input))",
+                ring: "hsl(var(--ring))",
+                background: "hsl(var(--background))",
+                foreground: "hsl(var(--foreground))",
+                primary: {
+                    DEFAULT: "hsl(var(--primary))",
+                    foreground: "hsl(var(--primary-foreground))",
+                    50: '#e6f7f4',
+                    100: '#b3e7dc',
+                    200: '#80d7c4',
+                    300: '#4dc7ac',
+                    400: '#1ab794',
+                    500: '#00a67e',
+                    600: '#008565',
+                    700: '#00644c',
+                    800: '#004333',
+                    900: '#00221a',
+                },
+                secondary: {
+                    DEFAULT: "hsl(var(--secondary))",
+                    foreground: "hsl(var(--secondary-foreground))",
+                    50: '#e6f2ff',
+                    100: '#b3d9ff',
+                    200: '#80c0ff',
+                    300: '#4da7ff',
+                    400: '#1a8eff',
+                    500: '#0075ff',
+                    600: '#005cd6',
+                    700: '#0043ad',
+                    800: '#002a84',
+                    900: '#00115b',
+                },
+                destructive: {
+                    DEFAULT: "hsl(var(--destructive))",
+                    foreground: "hsl(var(--destructive-foreground))",
+                },
+                muted: {
+                    DEFAULT: "hsl(var(--muted))",
+                    foreground: "hsl(var(--muted-foreground))",
+                },
+                accent: {
+                    DEFAULT: "hsl(var(--accent))",
+                    foreground: "hsl(var(--accent-foreground))",
+                    50: '#fff7e6',
+                    100: '#ffe7b3',
+                    200: '#ffd780',
+                    300: '#ffc74d',
+                    400: '#ffb71a',
+                    500: '#ffa700',
+                    600: '#d68800',
+                    700: '#ad6900',
+                    800: '#844a00',
+                    900: '#5b2b00',
+                },
+                popover: {
+                    DEFAULT: "hsl(var(--popover))",
+                    foreground: "hsl(var(--popover-foreground))",
+                },
+                card: {
+                    DEFAULT: "hsl(var(--card))",
+                    foreground: "hsl(var(--card-foreground))",
+                },
+                success: '#10b981',
+                warning: '#f59e0b',
+                error: '#ef4444',
+                info: '#3b82f6',
+            },
+            borderRadius: {
+                lg: "var(--radius)",
+                md: "calc(var(--radius) - 2px)",
+                sm: "calc(var(--radius) - 4px)",
+            },
+            fontFamily: {
+                sans: ['Inter', 'system-ui', 'sans-serif'],
+                display: ['Outfit', 'sans-serif'],
+            },
+            animation: {
+                'fade-in': 'fadeIn 0.5s ease-in',
+                'slide-up': 'slideUp 0.5s ease-out',
+                'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+                fadeIn: {
+                    '0%': { opacity: '0' },
+                    '100%': { opacity: '1' },
+                },
+                slideUp: {
+                    '0%': { transform: 'translateY(20px)', opacity: '0' },
+                    '100%': { transform: 'translateY(0)', opacity: '1' },
+                },
+            },
+        },
+    },
+    plugins: [],
+}
