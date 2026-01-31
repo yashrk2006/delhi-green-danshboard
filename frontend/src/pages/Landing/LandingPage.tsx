@@ -113,7 +113,10 @@ const LandingPage = () => {
                         >
                             Explore Dashboard
                         </button>
-                        <button className="btn-outline text-lg px-8 py-4">
+                        <button
+                            onClick={() => navigate('/docs')}
+                            className="btn-outline text-lg px-8 py-4"
+                        >
                             View Documentation
                         </button>
                     </div>

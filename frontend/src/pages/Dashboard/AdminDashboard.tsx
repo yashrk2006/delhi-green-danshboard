@@ -8,11 +8,33 @@ import {
     TrendingDown,
     Activity,
     AlertTriangle,
-    ArrowRight
+    ArrowRight,
+    Volume2,
+    Download
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { dashboardStats, recentAlerts } from '../../data/mockData';
-import { AreaChart, Area, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import UnifiedCityMap from '../../components/maps/UnifiedCityMap';
+import { motion } from 'framer-motion';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import toast from 'react-hot-toast';
+
+const container = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
+
+const item = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1 }
+};
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -92,6 +114,80 @@ const AdminDashboard = () => {
         { location: 'Okhla', score: 22 }
     ];
 
+    const handleExport = () => {
+        try {
+            const doc = new jsPDF();
+
+            // Add Header
+            doc.setFontSize(20);
+            doc.setTextColor(31, 41, 55); // Gray-800
+            doc.text('Smart Green Delhi - Dashboard Overview', 14, 22);
+
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+
+            // Add Module Summary
+            doc.setDrawColor(200);
+            doc.line(14, 40, 196, 40);
+
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text('Environmental Modules Status', 14, 50);
+
+            // Define Modules Table
+            const moduleColumns = ["Module", "Core Metric", "Value", "Trend", "Active Sensors"];
+            const moduleRows = moduleCards.map(m => [
+                m.title,
+                m.unit,
+                m.value,
+                m.change,
+                m.sensors
+            ]);
+
+            autoTable(doc, {
+                head: [moduleColumns],
+                body: moduleRows,
+                startY: 55,
+                theme: 'grid',
+                headStyles: { fillColor: [31, 41, 55] }, // Gray
+                styles: { fontSize: 10 },
+            });
+
+            // Get Y position for next table safely
+            let finalY = ((doc as any).lastAutoTable?.finalY || 100) + 15;
+
+            // Add Recent Alerts Table
+            doc.setFontSize(14);
+            doc.text('Recent System Alerts', 14, finalY);
+
+            const alertColumns = ["Title", "Severity", "Message", "Time"];
+            const alertRows = recentAlerts.slice(0, 5).map(a => [
+                a.title,
+                a.severity.toUpperCase(),
+                a.message,
+                new Date(a.timestamp).toLocaleTimeString()
+            ]);
+
+            autoTable(doc, {
+                head: [alertColumns],
+                body: alertRows,
+                startY: finalY + 5,
+                theme: 'grid',
+                headStyles: { fillColor: [239, 68, 68] }, // Red
+                styles: { fontSize: 10 },
+            });
+
+            // Save the PDF
+            doc.save(`Dashboard_Overview_${new Date().toISOString().split('T')[0]}.pdf`);
+            toast.success('Dashboard exported as PDF!');
+
+        } catch (error) {
+            console.error('Export failed:', error);
+            toast.error('Failed to export dashboard');
+        }
+    };
+
     return (
         <DashboardLayout>
             <div className="space-y-8">
@@ -100,18 +196,44 @@ const AdminDashboard = () => {
                     <h1 className="text-4xl font-display font-bold mb-2">
                         <span className="text-gradient">Admin Dashboard</span>
                     </h1>
-                    <p className="text-gray-600">
-                        Real-time overview of all environmental monitoring systems
-                    </p>
+                    <div className="flex justify-between items-end">
+                        <p className="text-gray-600">
+                            Real-time overview of all environmental monitoring systems
+                        </p>
+                        <button
+                            onClick={handleExport}
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-xl hover:bg-gray-700 transition-colors shadow-lg hover:shadow-xl"
+                        >
+                            <Download className="w-4 h-4" />
+                            Export Overview
+                        </button>
+                    </div>
                 </div>
 
                 {/* Module Overview Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <motion.div
+                    variants={container}
+                    initial="hidden"
+                    animate="show"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                >
                     {moduleCards.map((module, index) => (
-                        <div
+                        <motion.div
                             key={index}
+                            variants={item}
                             onClick={() => navigate(module.path)}
-                            className="card-premium card-glow p-6 cursor-pointer group hover:-translate-y-2 transition-all duration-300"
+                            whileHover={{
+                                y: -10,
+                                scale: 1.02,
+                                transition: { type: "spring", stiffness: 400, damping: 25 }
+                            }}
+                            whileTap={{ scale: 0.98 }}
+                            onMouseMove={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                                e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+                            }}
+                            className="card-premium card-glow p-6 group"
                         >
                             <div className="flex items-center justify-between mb-4">
                                 <div className={`w-12 h-12 bg-gradient-to-br ${module.color} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
@@ -139,8 +261,19 @@ const AdminDashboard = () => {
                                 <span>{module.sensors} Sensors Active</span>
                                 <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
-                        </div>
+                        </motion.div>
                     ))}
+                </motion.div>
+
+                {/* Unified Environmental Map */}
+                <div className="card-premium p-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-800">Unified Environmental Map</h2>
+                            <p className="text-sm text-gray-600 italic">Live tracking of all sensors, fleets, and green zones across Delhi NCR</p>
+                        </div>
+                    </div>
+                    <UnifiedCityMap />
                 </div>
 
                 {/* Charts Row */}
@@ -234,10 +367,10 @@ const AdminDashboard = () => {
                                 <div
                                     key={alert.id}
                                     className={`p-4 rounded-xl border-l-4 ${alert.severity === 'critical'
-                                            ? 'bg-red-50 border-red-500'
-                                            : alert.severity === 'warning'
-                                                ? 'bg-yellow-50 border-yellow-500'
-                                                : 'bg-blue-50 border-blue-500'
+                                        ? 'bg-red-50 border-red-500'
+                                        : alert.severity === 'warning'
+                                            ? 'bg-yellow-50 border-yellow-500'
+                                            : 'bg-blue-50 border-blue-500'
                                         }`}
                                 >
                                     <div className="flex items-start justify-between">
@@ -260,35 +393,106 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
+                {/* Noise & Global Context */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    onMouseMove={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                        e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+                    }}
+                    whileHover={{ scale: 1.01 }}
+                    className="card-premium card-glow p-6 bg-gradient-to-br from-red-500 to-rose-600 text-white"
+                >
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
+                                <Volume2 className="w-10 h-10 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-bold">Global Noise Ranking: #2</h3>
+                                <p className="text-rose-100 text-sm">
+                                    Delhi ranked the <strong>second noisiest city</strong> in the world. Monitoring sites at Anand Vihar & Punjabi Bagh consistently exceed safety limits.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
+                                <div className="text-xs font-bold opacity-80 uppercase">Commercial Limit</div>
+                                <div className="text-xl font-bold">65dB Day</div>
+                            </div>
+                            <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
+                                <div className="text-xs font-bold opacity-80 uppercase">Current Peak</div>
+                                <div className="text-xl font-bold">78dB</div>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+
                 {/* Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="metric-card from-purple-500 to-pink-500">
+                <motion.div
+                    variants={container}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true }}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                >
+                    <motion.div
+                        variants={item}
+                        whileHover={{ y: -5, scale: 1.02 }}
+                        onMouseMove={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                            e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+                        }}
+                        className="metric-card card-glow from-purple-500 to-pink-500"
+                    >
                         <div className="flex items-center justify-between mb-4">
                             <Activity className="w-10 h-10" />
                             <TrendingUp className="w-6 h-6" />
                         </div>
                         <div className="text-3xl font-bold mb-1">10M+</div>
                         <div className="text-sm opacity-90">Data Points / Month</div>
-                    </div>
+                    </motion.div>
 
-                    <div className="metric-card from-blue-500 to-cyan-500">
+                    <motion.div
+                        variants={item}
+                        whileHover={{ y: -5, scale: 1.02 }}
+                        onMouseMove={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                            e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+                        }}
+                        className="metric-card card-glow from-blue-500 to-cyan-500"
+                    >
                         <div className="flex items-center justify-between mb-4">
                             <Cloud className="w-10 h-10" />
                             <div className="text-sm font-semibold">99.9%</div>
                         </div>
                         <div className="text-3xl font-bold mb-1">120+</div>
-                        <div className="text-sm opacity-90">Active Sensors</div>
-                    </div>
+                        <div className="text-sm opacity-90">Active IoT Sensors</div>
+                    </motion.div>
 
-                    <div className="metric-card from-green-500 to-emerald-500">
+                    <motion.div
+                        variants={item}
+                        whileHover={{ y: -5, scale: 1.02 }}
+                        onMouseMove={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                            e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+                        }}
+                        className="metric-card card-glow from-green-500 to-emerald-500"
+                    >
                         <div className="flex items-center justify-between mb-4">
                             <Trees className="w-10 h-10" />
                             <TrendingUp className="w-6 h-6" />
                         </div>
-                        <div className="text-3xl font-bold mb-1">58,100</div>
-                        <div className="text-sm opacity-90">Trees Tracked</div>
-                    </div>
-                </div>
+                        <div className="text-3xl font-bold mb-1">1.25M+</div>
+                        <div className="text-sm opacity-90">Plants (Delhi NCR)</div>
+                    </motion.div>
+                </motion.div>
             </div>
         </DashboardLayout>
     );

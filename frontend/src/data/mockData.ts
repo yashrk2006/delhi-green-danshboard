@@ -5,7 +5,9 @@ import type {
     WaterSensor,
     GreenZone,
     DashboardStats,
-    Alert
+    Alert,
+    Landmark,
+    NoiseSensor
 } from '../types';
 
 // Air Quality Sensors - Strategic locations across Delhi
@@ -16,15 +18,15 @@ export const airQualitySensors: AirQualitySensor[] = [
         location: { latitude: 28.6304, longitude: 77.2177, address: 'Connaught Place, New Delhi', zone: 'Central Delhi' },
         status: 'active',
         lastReading: {
-            timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
-            pm25: 145,
-            pm10: 220,
-            no2: 65,
-            so2: 28,
-            co: 1.2,
-            o3: 35,
-            aqi: 198,
-            category: 'moderate'
+            timestamp: new Date().toISOString(),
+            pm25: 179,
+            pm10: 310,
+            no2: 85,
+            so2: 42,
+            co: 2.1,
+            o3: 45,
+            aqi: 245,
+            category: 'severe'
         }
     },
     {
@@ -33,83 +35,32 @@ export const airQualitySensors: AirQualitySensor[] = [
         location: { latitude: 28.6469, longitude: 77.3165, address: 'Anand Vihar, East Delhi', zone: 'East Delhi' },
         status: 'active',
         lastReading: {
-            timestamp: new Date(Date.now() - 3 * 60000).toISOString(),
-            pm25: 285,
-            pm10: 410,
-            no2: 95,
-            so2: 48,
-            co: 2.8,
-            o3: 42,
-            aqi: 342,
-            category: 'very poor'
+            timestamp: new Date().toISOString(),
+            pm25: 315,
+            pm10: 480,
+            no2: 120,
+            so2: 55,
+            co: 3.5,
+            o3: 52,
+            aqi: 412,
+            category: 'severe'
         }
     },
     {
         id: 'AQ-003',
-        name: 'Dwarka Sector 8',
-        location: { latitude: 28.5706, longitude: 77.0593, address: 'Dwarka Sector 8, West Delhi', zone: 'West Delhi' },
+        name: 'Punjabi Bagh',
+        location: { latitude: 28.6675, longitude: 77.1259, address: 'Punjabi Bagh, West Delhi', zone: 'West Delhi' },
         status: 'active',
         lastReading: {
-            timestamp: new Date(Date.now() - 7 * 60000).toISOString(),
-            pm25: 98,
-            pm10: 165,
-            no2: 45,
-            so2: 18,
-            co: 0.9,
-            o3: 28,
-            aqi: 156,
-            category: 'moderate'
-        }
-    },
-    {
-        id: 'AQ-004',
-        name: 'Rohini',
-        location: { latitude: 28.7499, longitude: 77.0662, address: 'Rohini, North West Delhi', zone: 'North West Delhi' },
-        status: 'active',
-        lastReading: {
-            timestamp: new Date(Date.now() - 2 * 60000).toISOString(),
-            pm25: 122,
-            pm10: 195,
-            no2: 58,
-            so2: 22,
-            co: 1.5,
-            o3: 31,
-            aqi: 178,
-            category: 'moderate'
-        }
-    },
-    {
-        id: 'AQ-005',
-        name: 'Lodhi Road',
-        location: { latitude: 28.5926, longitude: 77.2197, address: 'Lodhi Road, South Delhi', zone: 'South Delhi' },
-        status: 'active',
-        lastReading: {
-            timestamp: new Date(Date.now() - 10 * 60000).toISOString(),
-            pm25: 68,
-            pm10: 112,
-            no2: 32,
-            so2: 12,
-            co: 0.6,
-            o3: 22,
-            aqi: 98,
-            category: 'satisfactory'
-        }
-    },
-    {
-        id: 'AQ-006',
-        name: 'ITO',
-        location: { latitude: 28.6289, longitude: 77.2413, address: 'ITO, Central Delhi', zone: 'Central Delhi' },
-        status: 'active',
-        lastReading: {
-            timestamp: new Date(Date.now() - 4 * 60000).toISOString(),
-            pm25: 178,
-            pm10: 265,
-            no2: 78,
+            timestamp: new Date().toISOString(),
+            pm25: 195,
+            pm10: 340,
+            no2: 92,
             so2: 38,
-            co: 1.8,
-            o3: 38,
-            aqi: 232,
-            category: 'poor'
+            co: 2.4,
+            o3: 48,
+            aqi: 268,
+            category: 'severe'
         }
     }
 ];
@@ -268,38 +219,38 @@ export const waterSensors: WaterSensor[] = [
 export const greenZones: GreenZone[] = [
     {
         id: 'GZ-001',
-        name: 'Central Ridge Forest',
-        location: { latitude: 28.6442, longitude: 77.1934, address: 'Ridge Road', zone: 'Central Delhi' },
-        area: 864.0,
-        greenCover: 92.5,
-        trees: 28500,
+        name: 'Yamuna Biodiversity Park',
+        location: { latitude: 28.7132, longitude: 77.2378, address: 'Main Jagatpur Rd', zone: 'North Delhi' },
+        area: 185.0,
+        greenCover: 94.2,
+        trees: 42000,
         type: 'forest'
     },
     {
         id: 'GZ-002',
-        name: 'Lodhi Garden',
-        location: { latitude: 28.5931, longitude: 77.2197, address: 'Lodhi Road', zone: 'South Delhi' },
-        area: 90.0,
-        greenCover: 88.3,
-        trees: 8200,
-        type: 'garden'
+        name: 'Aravalli Biodiversity Park',
+        location: { latitude: 28.5524, longitude: 77.1432, address: 'Vasant Vihar', zone: 'South West Delhi' },
+        area: 280.0,
+        greenCover: 91.5,
+        trees: 65000,
+        type: 'forest'
     },
     {
         id: 'GZ-003',
-        name: 'Sanjay Van',
-        location: { latitude: 28.5243, longitude: 77.1731, address: 'Vasant Kunj', zone: 'South Delhi' },
-        area: 443.0,
-        greenCover: 94.8,
-        trees: 15600,
+        name: 'Tilpath Valley Biodiversity Park',
+        location: { latitude: 28.4982, longitude: 77.2624, address: 'Sainik Farm', zone: 'South Delhi' },
+        area: 70.0,
+        greenCover: 89.8,
+        trees: 12000,
         type: 'forest'
     },
     {
         id: 'GZ-004',
-        name: 'Buddha Jayanti Park',
-        location: { latitude: 28.6442, longitude: 77.1947, address: 'Ridge Road', zone: 'Central Delhi' },
-        area: 62.0,
-        greenCover: 86.2,
-        trees: 5800,
+        name: 'Neela Hauz Biodiversity Park',
+        location: { latitude: 28.5385, longitude: 77.1610, address: 'Aruna Asaf Ali Marg', zone: 'South Delhi' },
+        area: 10.0,
+        greenCover: 85.2,
+        trees: 2500,
         type: 'park'
     }
 ];
@@ -307,24 +258,24 @@ export const greenZones: GreenZone[] = [
 // Dashboard Statistics
 export const dashboardStats: DashboardStats = {
     airQuality: {
-        avgAQI: 178,
-        trend: 'down',
-        sensorsActive: 6
+        avgAQI: 245,
+        trend: 'up',
+        sensorsActive: 42
     },
     waste: {
-        collected: 8450,
-        segregation: 68.5,
-        bioCNG: 425.8
+        collected: 11450,
+        segregation: 90.0,
+        bioCNG: 585.5
     },
     water: {
-        avgHealthScore: 42,
-        sensorsActive: 4,
-        alerts: 3
+        avgHealthScore: 28,
+        sensorsActive: 12,
+        alerts: 8
     },
     greening: {
-        greenCover: 22.8,
-        trees: 58100,
-        co2: 15240
+        greenCover: 21.88,
+        trees: 1250000,
+        co2: 45240
     }
 };
 
@@ -335,7 +286,7 @@ export const recentAlerts: Alert[] = [
         type: 'air',
         severity: 'critical',
         title: 'Very Poor Air Quality',
-        message: 'AQI exceeds 300 at Anand Vihar sensor',
+        message: 'AQI exceeds 400 at Anand Vihar sensor',
         timestamp: new Date(Date.now() - 25 * 60000).toISOString(),
         location: airQualitySensors[1].location,
         acknowledged: false
@@ -364,10 +315,87 @@ export const recentAlerts: Alert[] = [
         id: 'AL-004',
         type: 'air',
         severity: 'warning',
-        title: 'Poor Air Quality',
-        message: 'AQI reaching 232 at ITO monitoring station',
+        title: 'High Noise Pollution',
+        message: 'Noise levels exceeding 75dB at Anand Vihar Station',
         timestamp: new Date(Date.now() - 85 * 60000).toISOString(),
-        location: airQualitySensors[5].location,
+        location: airQualitySensors[1].location,
         acknowledged: true
     }
+];
+
+// Important Landmarks of Delhi NCR
+export const delhiLandmarks: Landmark[] = [
+    {
+        id: 'LM-001',
+        name: 'India Gate',
+        location: { latitude: 28.6129, longitude: 77.2295, address: 'Rajpath, New Delhi', zone: 'Central Delhi' },
+        type: 'historical'
+    },
+    {
+        id: 'LM-002',
+        name: 'Red Fort',
+        location: { latitude: 28.6562, longitude: 77.2410, address: 'Netaji Subhash Marg', zone: 'North Delhi' },
+        type: 'historical'
+    },
+    {
+        id: 'LM-003',
+        name: 'Rashtrapati Bhavan',
+        location: { latitude: 28.6143, longitude: 77.1994, address: 'Presidential Estate', zone: 'Central Delhi' },
+        type: 'government'
+    },
+    {
+        id: 'LM-004',
+        name: 'Qutub Minar',
+        location: { latitude: 28.5244, longitude: 77.1855, address: 'Mehrauli', zone: 'South Delhi' },
+        type: 'historical'
+    },
+    {
+        id: 'LM-005',
+        name: 'IGI Airport',
+        location: { latitude: 28.5562, longitude: 77.1000, address: 'Palam', zone: 'South West Delhi' },
+        type: 'transport'
+    },
+    {
+        id: 'LM-006',
+        name: 'Connaught Place',
+        location: { latitude: 28.6315, longitude: 77.2167, address: 'Rajiv Chowk', zone: 'Central Delhi' },
+        type: 'other'
+    }
+];
+
+// Noise Monitoring Sensors
+export const noiseSensors: NoiseSensor[] = [
+    {
+        id: 'NS-001',
+        name: 'Anand Vihar Noise Station',
+        location: { latitude: 28.6469, longitude: 77.3165, address: 'Anand Vihar ISBT', zone: 'East Delhi' },
+        status: 'active',
+        lastReading: {
+            timestamp: new Date().toISOString(),
+            dayLevel: 78,
+            nightLevel: 68,
+            limitDay: 65,
+            limitNight: 55
+        }
+    },
+    {
+        id: 'NS-002',
+        name: 'Punjabi Bagh Noise Station',
+        location: { latitude: 28.6675, longitude: 77.1259, address: 'Punjabi Bagh Residential', zone: 'West Delhi' },
+        status: 'active',
+        lastReading: {
+            timestamp: new Date().toISOString(),
+            dayLevel: 72,
+            nightLevel: 62,
+            limitDay: 65,
+            limitNight: 55
+        }
+    }
+];
+
+// Waste to Energy Plants
+export const wtePlants = [
+    { id: 'WTE-001', name: 'Tehkhand Plant', targetCapacity: '45 MW', status: 'Expanding' },
+    { id: 'WTE-002', name: 'Bawana Plant', targetCapacity: '60 MW', status: 'Expanding' },
+    { id: 'WTE-003', name: 'Narela Project', targetCapacity: '30 MW', status: 'Proposed' }
 ];

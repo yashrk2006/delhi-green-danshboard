@@ -125,11 +125,35 @@ export interface DashboardStats {
 // Alerts
 export interface Alert {
     id: string;
-    type: 'air' | 'waste' | 'water' | 'system';
+    type: 'air' | 'waste' | 'water' | 'system' | 'noise';
     severity: 'info' | 'warning' | 'critical';
     title: string;
     message: string;
     timestamp: string;
     location?: Location;
     acknowledged: boolean;
+}
+
+export interface Landmark {
+    id: string;
+    name: string;
+    location: Location;
+    type: 'historical' | 'government' | 'transport' | 'other';
+}
+
+// Noise Monitoring
+export interface NoiseSensor {
+    id: string;
+    name: string;
+    location: Location;
+    status: 'active' | 'maintenance' | 'offline';
+    lastReading: NoiseReading;
+}
+
+export interface NoiseReading {
+    timestamp: string;
+    dayLevel: number;
+    nightLevel: number;
+    limitDay: number;
+    limitNight: number;
 }

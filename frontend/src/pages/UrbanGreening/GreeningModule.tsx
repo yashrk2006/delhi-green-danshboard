@@ -1,31 +1,56 @@
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { Trees, Leaf, TrendingUp, Cloud, MapPin, Thermometer } from 'lucide-react';
+import GreenZonesMap from '../../components/maps/GreenZonesMap';
+import { Trees, Leaf, TrendingUp, Cloud, Thermometer, RefreshCw, Download, Layers, Wind } from 'lucide-react';
 import { greenZones, dashboardStats } from '../../data/mockData';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+            delayChildren: 0.2
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { y: 20, opacity: 0, scale: 0.95 },
+    show: {
+        y: 0,
+        opacity: 1,
+        scale: 1,
+        transition: { type: 'spring', stiffness: 300, damping: 24 }
+    }
+};
 
 const GreeningModule = () => {
-    const totalGreenCover = greenZones.reduce((sum, zone) => sum + zone.area, 0);
+    const [useSatellite, setUseSatellite] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [showContent, setShowContent] = useState(false);
+
+    useEffect(() => {
+        setShowContent(true);
+    }, []);
+
     const totalTrees = greenZones.reduce((sum, zone) => sum + zone.trees, 0);
-    const avgGreenCover = greenZones.reduce((sum, zone) => sum + zone.greenCover, 0) / greenZones.length;
 
-    // Green cover by type
-    const coverByType = [
-        { name: 'Forest', value: 1307, color: '#059669' },
-        { name: 'Parks', value: 152, color: '#10b981' },
-        { name: 'Gardens', value: 90, color: '#34d399' }
+    const greenCoverGrowthData = [
+        { year: '2001', cover: 10.2 },
+        { year: '2005', cover: 12.5 },
+        { year: '2009', cover: 15.8 },
+        { year: '2013', cover: 18.2 },
+        { year: '2017', cover: 20.6 },
+        { year: '2019', cover: 21.88 },
+        { year: '2026', cover: 22.8 }
     ];
 
-    // Monthly plantation data
-    const plantationData = [
-        { month: 'Jan', trees: 4500 },
-        { month: 'Feb', trees: 5200 },
-        { month: 'Mar', trees: 6800 },
-        { month: 'Apr', trees: 5900 },
-        { month: 'May', trees: 7100 },
-        { month: 'Jun', trees: 6500 }
-    ];
-
-    // Temperature reduction data
     const tempReductionData = [
         { area: 'Central Ridge', reduction: 3.2 },
         { area: 'Sanjay Van', reduction: 2.8 },
@@ -33,271 +58,254 @@ const GreeningModule = () => {
         { area: 'Buddha Park', reduction: 1.9 }
     ];
 
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+        setTimeout(() => {
+            setIsRefreshing(false);
+            toast.success('Latest satellite data synced!');
+        }, 1200);
+    };
+
+    const handleExport = () => {
+        try {
+            const doc = new jsPDF();
+            doc.setFontSize(20);
+            doc.setTextColor(22, 163, 74);
+            doc.text('Smart Green Delhi - Urban Greening Report', 14, 22);
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+            doc.text(`Total Trees Tracked: ${totalTrees.toLocaleString()}`, 14, 36);
+            doc.setDrawColor(200);
+            doc.line(14, 40, 196, 40);
+
+            const tableColumn = ["Zone Name", "Location", "Type", "Area (Ha)", "Trees", "Green Cover %"];
+            const tableRows: any[] = [];
+            greenZones.forEach(zone => {
+                tableRows.push([
+                    zone.name, zone.location.zone, zone.type.toUpperCase(),
+                    zone.area, zone.trees.toLocaleString(), `${zone.greenCover}%`
+                ]);
+            });
+
+            autoTable(doc, {
+                head: [tableColumn], body: tableRows, startY: 60, theme: 'grid',
+                headStyles: { fillColor: [22, 163, 74] }, styles: { fontSize: 10 },
+            });
+            doc.save(`Greening_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+            toast.success('Report exported successfully!');
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to export PDF');
+        }
+    };
+
     return (
         <DashboardLayout>
-            <div className="space-y-8">
-                {/* Header */}
-                <div>
-                    <h1 className="text-4xl font-display font-bold mb-2">
-                        <Trees className="inline w-10 h-10 mr-3 text-green-600" />
-                        <span className="text-gradient">Urban Greening</span>
-                    </h1>
-                    <p className="text-gray-600">
-                        Green cover tracking, temperature reduction analytics & CO₂ absorption metrics
-                    </p>
-                </div>
-
-                {/* Key Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="metric-card from-green-500 to-emerald-600">
-                        <div className="flex items-center justify-between mb-4">
-                            <Leaf className="w-10 h-10" />
-                            <TrendingUp className="w-6 h-6" />
+            <div className="p-6 md:p-8 bg-[#F5FBF7] min-h-screen space-y-8">
+                {/* Fluid Sticky Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="sticky top-4 z-30 bg-white/80 backdrop-blur-xl border border-white/50 shadow-lg rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="bg-green-100 p-3 rounded-xl text-green-600">
+                            <Trees className="w-8 h-8" />
                         </div>
-                        <div className="text-3xl font-bold mb-1">{dashboardStats.greening.greenCover}%</div>
-                        <div className="text-sm opacity-90">Green Cover</div>
-                    </div>
-
-                    <div className="metric-card from-emerald-500 to-teal-600">
-                        <div className="flex items-center justify-between mb-4">
-                            <Trees className="w-10 h-10" />
-                            <div className="text-sm font-semibold">+2.3%</div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                                Urban Greening <span className="text-green-600">Analytics</span>
+                            </h1>
+                            <p className="text-slate-500 text-sm font-medium">Forest cover & heat island monitoring</p>
                         </div>
-                        <div className="text-3xl font-bold mb-1">{totalTrees.toLocaleString()}</div>
-                        <div className="text-sm opacity-90">Trees Planted</div>
                     </div>
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleRefresh}
+                            className="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200"
+                            title="Sync Satellite Data"
+                        >
+                            <RefreshCw className={`w-5 h-5 text-slate-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        </motion.button>
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleExport}
+                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all"
+                        >
+                            <Download className="w-4 h-4" />
+                            <span>Export Report</span>
+                        </motion.button>
+                    </div>
+                </motion.div>
 
-                    <div className="metric-card from-blue-500 to-cyan-600">
-                        <div className="flex items-center justify-between mb-4">
-                            <Cloud className="w-10 h-10" />
-                            <TrendingUp className="w-6 h-6" />
-                        </div>
-                        <div className="text-3xl font-bold mb-1">{dashboardStats.greening.co2}kg</div>
-                        <div className="text-sm opacity-90">CO₂ Absorbed/day</div>
-                    </div>
+                {/* Staggered Metrics */}
+                <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate={showContent ? "show" : "hidden"}
+                    className="grid grid-cols-1 md:grid-cols-4 gap-6"
+                >
+                    {[
+                        { icon: Leaf, value: `${dashboardStats.greening.greenCover}%`, label: 'Green Cover', color: 'green', sub: 'Target: 33%' },
+                        { icon: TrendingUp, value: '+115%', label: 'Growth', color: 'emerald', sub: 'Since 2001' },
+                        { icon: Cloud, value: '19.3m²', label: 'Per Capita Cover', color: 'teal', sub: 'Total Area' },
+                        { icon: Thermometer, value: '4.8m²', label: 'Park Space', color: 'red', sub: 'WHO Rec: 9.5m²' }
+                    ].map((metric, idx) => (
+                        <motion.div
+                            key={idx}
+                            variants={itemVariants}
+                            whileHover={{ y: -8, transition: { duration: 0.2 } }}
+                            className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group"
+                        >
+                            <div className={`absolute -right-6 -top-6 w-24 h-24 bg-${metric.color}-50 rounded-full transition-transform group-hover:scale-150`}></div>
+                            <div className="relative z-10">
+                                <div className={`inline-flex p-3 rounded-xl bg-${metric.color}-50 text-${metric.color}-600 mb-4`}>
+                                    <metric.icon className="w-6 h-6" />
+                                </div>
+                                <div className="text-3xl font-black text-slate-800 mb-1">{metric.value}</div>
+                                <div className="text-xs font-bold text-slate-400 uppercase tracking-wide">{metric.label}</div>
+                                <div className={`text-xs font-medium text-${metric.color}-500 mt-1`}>{metric.sub}</div>
+                            </div>
+                        </motion.div>
+                    ))}
+                </motion.div>
 
-                    <div className="metric-card from-orange-500 to-red-500">
-                        <div className="flex items-center justify-between mb-4">
-                            <Thermometer className="w-10 h-10" />
-                            <div className="text-sm font-semibold">-2.5°C</div>
+                {/* Accessibility Gap Card */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    className="bg-gradient-to-br from-green-600 to-emerald-800 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl"
+                >
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                    <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
+                        <div className="flex-1">
+                            <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
+                                <Trees className="w-6 h-6 text-green-300" />
+                                The Urban Green Disparity
+                            </h3>
+                            <p className="text-green-50 text-base mb-6 leading-relaxed max-w-2xl">
+                                While Delhi’s total green cover is robust at <strong>21.88%</strong> (19.32 m²/person), accessible public spaces like parks only account for <strong>4.84 m² per person</strong>—significantly below the WHO recommendation of 9.5 m².
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                                <span className="bg-white/10 border border-white/10 px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-md">6 Biodiversity Parks</span>
+                                <span className="bg-white/10 border border-white/10 px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-md">740 Hectares Ecosystem</span>
+                                <span className="bg-white/10 border border-white/10 px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-md">Heat Island Mitigation</span>
+                            </div>
                         </div>
-                        <div className="text-3xl font-bold mb-1">Cooling</div>
-                        <div className="text-sm opacity-90">Avg Temperature Drop</div>
+                        <div className="flex gap-4">
+                            <div className="w-32 h-32 bg-white/10 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center border border-white/20">
+                                <span className="text-3xl font-bold">21.9%</span>
+                                <span className="text-[10px] uppercase font-bold text-green-200 mt-1">Total Coverage</span>
+                            </div>
+                            <div className="w-32 h-32 bg-white/10 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center border border-white/20">
+                                <span className="text-3xl font-bold text-red-200">4.8m²</span>
+                                <span className="text-[10px] uppercase font-bold text-green-200 mt-1">Accessible / Cap</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Charts */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Green Cover Distribution */}
-                    <div className="card-premium p-6">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">
-                            Green Cover Distribution (Hectares)
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200"
+                    >
+                        <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-green-500" />
+                            Green Cover Expansion
                         </h3>
                         <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={coverByType}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={({ name, value }) => `${name}: ${value}ha`}
-                                    outerRadius={100}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    {coverByType.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    {/* Monthly Plantation */}
-                    <div className="card-premium p-6">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">
-                            Monthly Tree Plantation
-                        </h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={plantationData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                <XAxis dataKey="month" stroke="#9ca3af" />
-                                <YAxis stroke="#9ca3af" />
-                                <Tooltip />
-                                <Line
-                                    type="monotone"
-                                    dataKey="trees"
-                                    stroke="#10b981"
-                                    strokeWidth={3}
-                                    dot={{ fill: '#10b981', r: 5 }}
-                                />
+                            <LineChart data={greenCoverGrowthData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                <XAxis dataKey="year" stroke="#94a3b8" axisLine={false} tickLine={false} tickMargin={10} />
+                                <YAxis stroke="#94a3b8" domain={[0, 25]} axisLine={false} tickLine={false} tickMargin={10} />
+                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                                <Line type="monotone" dataKey="cover" stroke="#16a34a" strokeWidth={4} name="Green Cover %" dot={{ fill: '#16a34a', r: 5 }} activeDot={{ r: 8 }} />
                             </LineChart>
                         </ResponsiveContainer>
-                    </div>
-                </div>
+                    </motion.div>
 
-                {/* Temperature Reduction Chart */}
-                <div className="card-premium p-6">
-                    <h3 className="text-xl font-bold text-gray-800 mb-4">
-                        Temperature Reduction by Area (°C)
-                    </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={tempReductionData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                            <XAxis dataKey="area" stroke="#9ca3af" />
-                            <YAxis stroke="#9ca3af" />
-                            <Tooltip />
-                            <Bar dataKey="reduction" fill="#f97316" radius={[8, 8, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-
-                {/* Green Zone Grid */}
-                <div className="card-premium p-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xl font-bold text-gray-800">
-                            Tracked Green Zones ({greenZones.length})
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200"
+                    >
+                        <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                            <Thermometer className="w-5 h-5 text-orange-500" />
+                            Heat Island Mitigation (Temp Drop)
                         </h3>
-                        <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                            <span className="text-sm text-gray-600">Active Monitoring</span>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {greenZones.map((zone) => (
-                            <div
-                                key={zone.id}
-                                className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-green-50"
-                            >
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex-1">
-                                        <h4 className="font-bold text-gray-800 text-lg mb-1">{zone.name}</h4>
-                                        <p className="text-sm text-gray-600">{zone.location.zone}</p>
-                                        <p className="text-xs text-gray-500 mt-1 capitalize">{zone.type}</p>
-                                    </div>
-                                    <div className={`p-3 rounded-xl ${zone.type === 'forest' ? 'bg-green-100' :
-                                            zone.type === 'park' ? 'bg-emerald-100' :
-                                                zone.type === 'garden' ? 'bg-teal-100' :
-                                                    'bg-lime-100'
-                                        }`}>
-                                        <Trees className={`w-6 h-6 ${zone.type === 'forest' ? 'text-green-600' :
-                                                zone.type === 'park' ? 'text-emerald-600' :
-                                                    zone.type === 'garden' ? 'text-teal-600' :
-                                                        'text-lime-600'
-                                            }`} />
-                                    </div>
-                                </div>
-
-                                {/* Green Cover Percentage */}
-                                <div className="mb-5">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-sm text-gray-600">Green Cover</span>
-                                        <span className="text-2xl font-bold text-green-700">{zone.greenCover}%</span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                                        <div
-                                            className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all"
-                                            style={{ width: `${zone.greenCover}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-
-                                {/* Stats Grid */}
-                                <div className="grid grid-cols-3 gap-3">
-                                    <div className="bg-white rounded-lg p-3 text-center border border-green-100">
-                                        <div className="text-xs text-gray-600 mb-1">Area</div>
-                                        <div className="font-bold text-gray-800">{zone.area}</div>
-                                        <div className="text-xs text-gray-500">hectares</div>
-                                    </div>
-                                    <div className="bg-white rounded-lg p-3 text-center border border-green-100">
-                                        <div className="text-xs text-gray-600 mb-1">Trees</div>
-                                        <div className="font-bold text-gray-800">{zone.trees.toLocaleString()}</div>
-                                        <div className="text-xs text-gray-500">count</div>
-                                    </div>
-                                    <div className="bg-white rounded-lg p-3 text-center border border-green-100">
-                                        <div className="text-xs text-gray-600 mb-1">CO₂</div>
-                                        <div className="font-bold text-gray-800">{Math.round(zone.trees * 0.25)}</div>
-                                        <div className="text-xs text-gray-500">kg/day</div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-4 pt-4 border-t border-green-100">
-                                    <div className="flex items-center justify-between text-xs">
-                                        <span className="text-gray-600">Density</span>
-                                        <span className="font-semibold text-gray-800">
-                                            {Math.round(zone.trees / zone.area)} trees/hectare
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={tempReductionData} barSize={60}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                <XAxis dataKey="area" stroke="#94a3b8" axisLine={false} tickLine={false} tickMargin={10} />
+                                <YAxis stroke="#94a3b8" axisLine={false} tickLine={false} tickMargin={10} />
+                                <Tooltip cursor={{ fil: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                                <Bar dataKey="reduction" fill="#f97316" name="Temp Reduction (°C)" radius={[8, 8, 8, 8]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </motion.div>
                 </div>
 
-                {/* Environmental Impact */}
+                {/* Map Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
+                >
+                    <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <div className="flex items-center gap-2">
+                            <Layers className="w-4 h-4 text-slate-500" />
+                            <h3 className="text-lg font-bold text-slate-800">Geospatial Analysis</h3>
+                        </div>
+                        <button
+                            onClick={() => setUseSatellite(!useSatellite)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${useSatellite ? 'bg-green-600 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                        >
+                            {useSatellite ? 'Satellite Mode ON' : 'Switch to Satellite'}
+                        </button>
+                    </div>
+                    <div className="h-[450px] w-full relative">
+                        <GreenZonesMap zones={greenZones} useSatellite={useSatellite} />
+                    </div>
+                </motion.div>
+
+                {/* Impact Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="card-premium p-6">
-                        <div className="flex items-center space-x-4 mb-4">
-                            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center">
-                                <Leaf className="w-8 h-8 text-white" />
+                    {[
+                        { title: 'Oxygen Production', val: '42,500 kg', unit: '/day', desc: 'Sustains healthy air levels', icon: Wind, color: 'blue' },
+                        { title: 'Air Filtration', val: '8.2 tons', unit: '/day', desc: 'Particulate matter captured', icon: Cloud, color: 'gray' },
+                        { title: 'Cooling Effect', val: '-2.5°C', unit: 'avg', desc: 'Reduction in surface temp', icon: Thermometer, color: 'orange' }
+                    ].map((card, idx) => (
+                        <motion.div
+                            key={idx}
+                            whileHover={{ y: -5 }}
+                            className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm"
+                        >
+                            <div className="flex items-start gap-4 mb-4">
+                                <div className={`p-3 rounded-2xl bg-${card.color}-50 text-${card.color}-500`}>
+                                    <card.icon className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wide">{card.title}</div>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-2xl font-black text-slate-800">{card.val}</span>
+                                        <span className="text-xs font-bold text-slate-500">{card.unit}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <div className="text-sm text-gray-600">Oxygen Production</div>
-                                <div className="text-2xl font-bold text-gray-800">42,500 kg/day</div>
-                            </div>
-                        </div>
-                        <p className="text-xs text-gray-600">
-                            Estimated daily oxygen production from tracked green zones
-                        </p>
-                    </div>
-
-                    <div className="card-premium p-6">
-                        <div className="flex items-center space-x-4 mb-4">
-                            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center">
-                                <Cloud className="w-8 h-8 text-white" />
-                            </div>
-                            <div>
-                                <div className="text-sm text-gray-600">Air Purification</div>
-                                <div className="text-2xl font-bold text-gray-800">8.2 tons/day</div>
-                            </div>
-                        </div>
-                        <p className="text-xs text-gray-600">
-                            Total pollutants filtered from the atmosphere
-                        </p>
-                    </div>
-
-                    <div className="card-premium p-6">
-                        <div className="flex items-center space-x-4 mb-4">
-                            <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center">
-                                <Thermometer className="w-8 h-8 text-white" />
-                            </div>
-                            <div>
-                                <div className="text-sm text-gray-600">Cooling Effect</div>
-                                <div className="text-2xl font-bold text-gray-800">-2.5°C</div>
-                            </div>
-                        </div>
-                        <p className="text-xs text-gray-600">
-                            Average temperature reduction in green zones
-                        </p>
-                    </div>
-                </div>
-
-                {/* Map Placeholder */}
-                <div className="card-premium p-6">
-                    <h3 className="text-xl font-bold text-gray-800 mb-4">
-                        Green Cover Heatmap
-                    </h3>
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl h-96 flex items-center justify-center border border-green-200">
-                        <div className="text-center">
-                            <MapPin className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                            <p className="text-gray-600 font-semibold">Interactive Green Zone Map</p>
-                            <p className="text-sm text-gray-500 mt-2">
-                                Visual representation of green cover density across Delhi
-                            </p>
-                        </div>
-                    </div>
+                            <p className="text-xs text-slate-400 font-medium">{card.desc}</p>
+                        </motion.div>
+                    ))}
                 </div>
             </div>
         </DashboardLayout>
